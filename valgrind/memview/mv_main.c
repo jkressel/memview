@@ -317,46 +317,59 @@ static VG_REGPARM(3) void trace_2instr(Addr addr, Addr addr2, SizeT size)
 static VG_REGPARM(2) void trace_load(Addr addr, SizeT size)
 {
     put_data(addr, MV_ShiftedRead, (uint32)size);
+    VG_(printf)("[L]: %p %d\n", addr, size);
 }
 
 static VG_REGPARM(3) void trace_2load(Addr addr, Addr addr2, SizeT size)
 {
     put_data(addr, MV_ShiftedRead, (uint32)size);
     put_data(addr2, MV_ShiftedRead, (uint32)size);
+    VG_(printf)("[L]: %p %d\n", addr, size);
+    VG_(printf)("[L]: %p %d\n", addr2, size);
 }
 
 static VG_REGPARM(2) void trace_store(Addr addr, SizeT size)
 {
     put_data(addr, MV_ShiftedWrite, (uint32)size);
+    VG_(printf)("[S]: %p %d\n", addr, size);
 }
 
 static VG_REGPARM(3) void trace_2store(Addr addr, Addr addr2, SizeT size)
 {
     put_data(addr, MV_ShiftedWrite, (uint32)size);
     put_data(addr2, MV_ShiftedWrite, (uint32)size);
+    VG_(printf)("[S]: %p %d\n", addr, size);
+    VG_(printf)("[S]: %p %d\n", addr2, size);
 }
 
 static VG_REGPARM(2) void trace_modify(Addr addr, SizeT size)
 {
     put_data(addr, MV_ShiftedWrite, (uint32)size);
+    VG_(printf)("[S]: %p %d\n", addr, size);
 }
 
 static VG_REGPARM(3) void trace_2modify(Addr addr, Addr addr2, SizeT size)
 {
     put_data(addr, MV_ShiftedWrite, (uint32)size);
     put_data(addr2, MV_ShiftedWrite, (uint32)size);
+    VG_(printf)("[S]: %p %d\n", addr, size);
+    VG_(printf)("[S]: %p %d\n", addr2, size);
 }
 
 static VG_REGPARM(3) void trace_loadstore(Addr addr, Addr addr2, SizeT size)
 {
     put_data(addr, MV_ShiftedRead, (uint32)size);
     put_data(addr2, MV_ShiftedWrite, (uint32)size);
+    VG_(printf)("[L]: %p %d\n", addr, size);
+    VG_(printf)("[S]: %p %d\n", addr2, size);
 }
 
 static VG_REGPARM(3) void trace_storeload(Addr addr, Addr addr2, SizeT size)
 {
     put_data(addr, MV_ShiftedWrite, (uint32)size);
     put_data(addr2, MV_ShiftedRead, (uint32)size);
+    VG_(printf)("[S]: %p %d\n", addr, size);
+    VG_(printf)("[L]: %p %d\n", addr2, size);
 }
 
 /* This version of flushEvents (currently unused) is similar to the one in
@@ -532,6 +545,7 @@ static void flushEventsRange(IRSB* sb, Int start, Int size)
             "flush_data", VG_(fnptr_to_fnentry)( flush_data ),
             mkIRExprVec_0() );
 
+
     di->guard =
         binop(Iop_CmpLT32S, max_entries,
                 binop(Iop_Add32, entries, mkU32(size)));
@@ -604,6 +618,7 @@ static void flushEventsRange(IRSB* sb, Int start, Int size)
 
 static void flushEventsIR(IRSB *sb)
 {
+	flushEventsCB(sb);
     Int i;
     for (i = 0; i < events_used; i += theMaxEntries)
     {
@@ -720,6 +735,7 @@ static void mv_malloc ( ThreadId tid, void* p, SizeT szB )
         VG_(HT_add_node)(malloc_list, hc);
 
         put_wdata((Addr)p, MV_ShiftedAlloc, szB);
+	VG_(printf)("[MALLOC]: %p %d\n", p, szB);
     }
 }
 
@@ -730,7 +746,7 @@ static void mv_free ( ThreadId tid __attribute__((unused)), void* p )
     if (hc)
     {
         put_wdata((Addr)p, MV_ShiftedFree, hc->size);
-
+	VG_(printf)("[FREE]: %p %d\n", p, hc->size);
         VG_(free)(hc);
     }
 }
@@ -749,12 +765,16 @@ static void mv_realloc ( ThreadId tid, void* p_new, void* p_old, SizeT new_szB )
         if (!hc)
             return;
    
-        if (new_szB > hc->size)
+        if (new_szB > hc->size) {
             put_wdata((Addr)p_new + hc->size,
                     MV_ShiftedAlloc, new_szB - hc->size);
-        else if (new_szB < hc->size)
+	    VG_(printf)("[MALLOC]: %p %d\n", p_new + hc->size, new_szB - hc->size);
+	}
+        else if (new_szB < hc->size) {
             put_wdata((Addr)p_new + new_szB,
                     MV_ShiftedFree, hc->size - new_szB);
+		VG_(printf)("[FREE]: %p %d\n", p_new + new_szB, hc->size - new_szB);
+	}
 
         hc->size = new_szB;
     }
