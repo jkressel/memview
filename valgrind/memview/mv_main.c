@@ -261,6 +261,7 @@ typedef
    struct {
       EventKind  ekind;
       IRAtom*    addr;
+      Addr 	 iaddr;
       Int        size;
       Int        type;
    }
@@ -314,62 +315,62 @@ static VG_REGPARM(3) void trace_2instr(Addr addr, Addr addr2, SizeT size)
     put_data(addr2, MV_ShiftedInstr, (uint32)size);
 }
 
-static VG_REGPARM(2) void trace_load(Addr addr, SizeT size)
+static VG_REGPARM(2) void trace_load(Addr addri, Addr addrd, SizeT size)
 {
-    put_data(addr, MV_ShiftedRead, (uint32)size);
-    VG_(printf)("[L]: %p %d\n", addr, size);
+    put_data(addrd, MV_ShiftedRead, (uint32)size);
+    VG_(printf)("[L]: %p %p %d\n", addri, addrd, size);
 }
 
-static VG_REGPARM(3) void trace_2load(Addr addr, Addr addr2, SizeT size)
+static VG_REGPARM(3) void trace_2load(Addr addri, Addr addrd, Addr addri2, Addr addrd2, SizeT size)
 {
-    put_data(addr, MV_ShiftedRead, (uint32)size);
-    put_data(addr2, MV_ShiftedRead, (uint32)size);
-    VG_(printf)("[L]: %p %d\n", addr, size);
-    VG_(printf)("[L]: %p %d\n", addr2, size);
+    put_data(addrd, MV_ShiftedRead, (uint32)size);
+    put_data(addrd2, MV_ShiftedRead, (uint32)size);
+    VG_(printf)("[L]: %p %p %d\n", addri, addrd, size);
+    VG_(printf)("[L]: %p %p %d\n", addri2, addrd2, size);
 }
 
-static VG_REGPARM(2) void trace_store(Addr addr, SizeT size)
+static VG_REGPARM(2) void trace_store(Addr addri, Addr addrd, SizeT size)
 {
-    put_data(addr, MV_ShiftedWrite, (uint32)size);
-    VG_(printf)("[S]: %p %d\n", addr, size);
+    put_data(addrd, MV_ShiftedWrite, (uint32)size);
+    VG_(printf)("[S]: %p %p %d\n", addri, addrd, size);
 }
 
-static VG_REGPARM(3) void trace_2store(Addr addr, Addr addr2, SizeT size)
+static VG_REGPARM(3) void trace_2store(Addr addri, Addr addrd, Addr addri2, Addr addrd2, SizeT size)
 {
-    put_data(addr, MV_ShiftedWrite, (uint32)size);
-    put_data(addr2, MV_ShiftedWrite, (uint32)size);
-    VG_(printf)("[S]: %p %d\n", addr, size);
-    VG_(printf)("[S]: %p %d\n", addr2, size);
+    put_data(addrd, MV_ShiftedWrite, (uint32)size);
+    put_data(addrd2, MV_ShiftedWrite, (uint32)size);
+    VG_(printf)("[S]: %p %p %d\n", addri, addrd, size);
+    VG_(printf)("[S]: %p %p %d\n", addri2, addrd2, size);
 }
 
-static VG_REGPARM(2) void trace_modify(Addr addr, SizeT size)
+static VG_REGPARM(2) void trace_modify(Addr addri, Addr addrd, SizeT size)
 {
-    put_data(addr, MV_ShiftedWrite, (uint32)size);
-    VG_(printf)("[S]: %p %d\n", addr, size);
+    put_data(addrd, MV_ShiftedWrite, (uint32)size);
+    VG_(printf)("[S]: %p %p %d\n", addri, addrd, size);
 }
 
-static VG_REGPARM(3) void trace_2modify(Addr addr, Addr addr2, SizeT size)
+static VG_REGPARM(3) void trace_2modify(Addr addri, Addr addrd, Addr addri2, Addr addrd2, SizeT size)
 {
-    put_data(addr, MV_ShiftedWrite, (uint32)size);
-    put_data(addr2, MV_ShiftedWrite, (uint32)size);
-    VG_(printf)("[S]: %p %d\n", addr, size);
-    VG_(printf)("[S]: %p %d\n", addr2, size);
+    put_data(addrd, MV_ShiftedWrite, (uint32)size);
+    put_data(addrd2, MV_ShiftedWrite, (uint32)size);
+    VG_(printf)("[S]: %p %p %d\n", addri, addrd, size);
+    VG_(printf)("[S]: %p %p %d\n", addri2, addrd2, size);
 }
 
-static VG_REGPARM(3) void trace_loadstore(Addr addr, Addr addr2, SizeT size)
+static VG_REGPARM(3) void trace_loadstore(Addr addri, Addr addrd, Addr addri2, Addr addrd2, SizeT size)
 {
-    put_data(addr, MV_ShiftedRead, (uint32)size);
-    put_data(addr2, MV_ShiftedWrite, (uint32)size);
-    VG_(printf)("[L]: %p %d\n", addr, size);
-    VG_(printf)("[S]: %p %d\n", addr2, size);
+    put_data(addrd, MV_ShiftedRead, (uint32)size);
+    put_data(addrd2, MV_ShiftedWrite, (uint32)size);
+    VG_(printf)("[L]: %p %p %d\n", addri, addrd, size);
+    VG_(printf)("[S]: %p %p %d\n", addri2, addrd2, size);
 }
 
-static VG_REGPARM(3) void trace_storeload(Addr addr, Addr addr2, SizeT size)
+static VG_REGPARM(3) void trace_storeload(Addr addri, Addr addrd, Addr addri2, Addr addrd2, SizeT size)
 {
-    put_data(addr, MV_ShiftedWrite, (uint32)size);
-    put_data(addr2, MV_ShiftedRead, (uint32)size);
-    VG_(printf)("[S]: %p %d\n", addr, size);
-    VG_(printf)("[L]: %p %d\n", addr2, size);
+    put_data(addrd, MV_ShiftedWrite, (uint32)size);
+    put_data(addrd2, MV_ShiftedRead, (uint32)size);
+    VG_(printf)("[S]: %p %p %d\n", addri, addrd, size);
+    VG_(printf)("[L]: %p %p %d\n", addri2, addrd2, size);
 }
 
 /* This version of flushEvents (currently unused) is similar to the one in
@@ -392,64 +393,64 @@ static void flushEventsCB(IRSB* sb)
 
         ev2 = i < events_used-1 ? &events[i+1] : NULL;
 
-        if (ev2 &&
-                ev->ekind == ev2->ekind &&
-                ev->size == ev2->size)
-        {
+     //   if (ev2 &&
+     //           ev->ekind == ev2->ekind &&
+     //           ev->size == ev2->size)
+     //   {
             // Decide on helper fn to call and args to pass it.
-            switch (ev->ekind) {
-                case Event_Ir: helperName = "trace_2instr";
-                               helperAddr =  trace_2instr;  break;
+     //       switch (ev->ekind) {
+     //           case Event_Ir: helperName = "trace_2instr";
+     //                          helperAddr =  trace_2instr;  break;
 
-                case Event_Dr: helperName = "trace_2load";
-                               helperAddr =  trace_2load;   break;
+     //           case Event_Dr: helperName = "trace_2load";
+     //                          helperAddr =  trace_2load;   break;
 
-                case Event_Dw: helperName = "trace_2store";
-                               helperAddr =  trace_2store;  break;
+       //         case Event_Dw: helperName = "trace_2store";
+       //                        helperAddr =  trace_2store;  break;
 
-                case Event_Dm: helperName = "trace_2modify";
-                               helperAddr =  trace_2modify; break;
-                default:
-                               tl_assert(0);
-            }
+      //          case Event_Dm: helperName = "trace_2modify";
+      //                         helperAddr =  trace_2modify; break;
+      //          default:
+      //                         tl_assert(0);
+      //      }
 
-            argv = mkIRExprVec_3( ev->addr,
-                                  ev2->addr, mkIRExpr_HWord( ev->size ));
-            regparms = 3;
+      //      argv = mkIRExprVec_5(mkIRExpr_HWord( ev->iaddr), ev->addr,
+      //                            mkIRExpr_HWord( ev2->iaddr), ev2->addr, mkIRExpr_HWord( ev->size ));
+      //      regparms = 5;
 
             // Skip the next event, since we paired it
-            i++;
-        }
-        else if (ev2 &&
-                ev->ekind == Event_Dr &&
-                ev2->ekind == Event_Dw &&
-                ev->size == ev2->size)
-        {
-            // Load then store
-            helperName = "trace_loadstore";
-            helperAddr = trace_loadstore;
+      //      i++;
+      //  }
+      //  else if (ev2 &&
+      //          ev->ekind == Event_Dr &&
+      //          ev2->ekind == Event_Dw &&
+      //          ev->size == ev2->size)
+      //  {
+      //      // Load then store
+      //      helperName = "trace_loadstore";
+      //      helperAddr = trace_loadstore;
 
-            argv = mkIRExprVec_3( ev->addr,
-                                  ev2->addr, mkIRExpr_HWord( ev->size ));
-            regparms = 3;
-            i++;
-        }
-        else if (ev2 &&
-                ev->ekind == Event_Dw &&
-                ev2->ekind == Event_Dr &&
-                ev->size == ev2->size)
-        {
-            // Store then load
-            helperName = "trace_storeload";
-            helperAddr = trace_storeload;
+      //      argv = mkIRExprVec_5( mkIRExpr_HWord( ev->iaddr), ev->addr,
+      //                            mkIRExpr_HWord( ev2->iaddr), ev2->addr, mkIRExpr_HWord( ev->size ));
+      //      regparms = 5;
+      //      i++;
+      //  }
+      //  else if (ev2 &&
+      //          ev->ekind == Event_Dw &&
+      //          ev2->ekind == Event_Dr &&
+      //          ev->size == ev2->size)
+      //  {
+      //      // Store then load
+      //      helperName = "trace_storeload";
+      //      helperAddr = trace_storeload;
 
-            argv = mkIRExprVec_3( ev->addr,
-                                  ev2->addr, mkIRExpr_HWord( ev->size ));
-            regparms = 3;
-            i++;
-        }
-        else
-        {
+      //      argv = mkIRExprVec_5( mkIRExpr_HWord( ev->iaddr), ev->addr,
+      //                            mkIRExpr_HWord( ev2->iaddr), ev2->addr, mkIRExpr_HWord( ev->size ));
+      //      regparms = 5;
+      //      i++;
+      //  }
+      //  else
+      //  {
 
             // Decide on helper fn to call and args to pass it.
             switch (ev->ekind) {
@@ -468,9 +469,9 @@ static void flushEventsCB(IRSB* sb)
                                tl_assert(0);
             }
 
-            argv = mkIRExprVec_2( ev->addr, mkIRExpr_HWord( ev->size ) );
-            regparms = 2;
-        }
+            argv = mkIRExprVec_3( mkIRExpr_HWord( ev->iaddr), ev->addr, mkIRExpr_HWord( ev->size ) );
+            regparms = 3;
+       // }
 
         // Add the helper.
         di   = unsafeIRDirty_0_N(regparms,
@@ -636,6 +637,31 @@ static void flushEvents(IRSB* sb)
     flushEventsIR(sb);
 }
 
+static void print_mem(Int load, Addr inst, IRAtom* address, Int size) {
+
+	unsigned long long long_addr;
+	if (address == NULL)
+		return;
+    if (address->tag == Iex_Const) {
+  	switch (address->Iex.Const.con->tag) {
+      		case Ico_U1:   long_addr = address->Iex.Const.con->Ico.U1; break;
+      		case Ico_U8:   long_addr = address->Iex.Const.con->Ico.U8; break;
+      		case Ico_U16:  long_addr = address->Iex.Const.con->Ico.U16; break;
+      		case Ico_U32:  long_addr = address->Iex.Const.con->Ico.U32; break;
+      		case Ico_U64:  long_addr = address->Iex.Const.con->Ico.U64; break;
+  	 }
+    }
+    else if (address->tag == Iex_RdTmp){
+      	long_addr = address->Iex.RdTmp.tmp;
+    }
+
+   if (load)
+	   VG_(printf)("[L]: %p %p %d\n", inst,long_addr, size);
+   else
+	   VG_(printf)("[S]: %p %p %d\n", inst, long_addr, size);
+
+}
+
 static void addEvent_Ir ( IRSB* sb, IRAtom* iaddr, UInt isize )
 {
     Event* evt;
@@ -653,17 +679,21 @@ static void addEvent_Ir ( IRSB* sb, IRAtom* iaddr, UInt isize )
 }
 
 static
-void addEvent_Dr ( IRSB* sb, IRAtom* daddr, Int dsize, Int type )
+void addEvent_Dr ( IRSB* sb, Addr insta, IRAtom* dataa, Int dsize, Int type )
 {
     Event* evt;
-    tl_assert(isIRAtom(daddr));
+    tl_assert(isIRAtom(dataa));
     tl_assert(dsize >= 1 && dsize <= MAX_DSIZE);
+   // VG_(printf)("[L]: %p %lx %d\n", insta,(Addr) dataa, dsize);
+   // ppIRExpr(dataa);
+   // print_mem(1, insta, dataa, dsize);
     if (events_used == N_EVENTS)
         flushEvents(sb);
     tl_assert(events_used >= 0 && events_used < N_EVENTS);
     evt = &events[events_used];
     evt->ekind = Event_Dr;
-    evt->addr  = daddr;
+    evt->addr  = dataa;
+    evt->iaddr = insta;
     evt->size  = dsize;
     evt->type  = type;
     events_used++;
@@ -671,11 +701,11 @@ void addEvent_Dr ( IRSB* sb, IRAtom* daddr, Int dsize, Int type )
 }
 
 static
-void addEvent_Dw ( IRSB* sb, IRAtom* daddr, Int dsize, Int type )
+void addEvent_Dw ( IRSB* sb, Addr insta, IRAtom* dataa, Int dsize, Int type )
 {
     Event* lastEvt;
     Event* evt;
-    tl_assert(isIRAtom(daddr));
+    tl_assert(isIRAtom(dataa));
     tl_assert(dsize >= 1 && dsize <= MAX_DSIZE);
 
     // Is it possible to merge this write with the preceding read?
@@ -684,12 +714,15 @@ void addEvent_Dw ( IRSB* sb, IRAtom* daddr, Int dsize, Int type )
             && lastEvt->ekind == Event_Dr
             && lastEvt->size  == dsize
             && lastEvt->type == type 
-            && eqIRAtom(lastEvt->addr, daddr))
+            )
     {
         lastEvt->ekind = Event_Dm;
         return;
     }
 
+   // VG_(printf)("[S]: %p %lx %d\n", insta, dataa, dsize);
+   // ppIRExpr(dataa);
+   // print_mem(0, insta, dataa, dsize);
     // No.  Add as normal.
     if (events_used == N_EVENTS)
         flushEvents(sb);
@@ -697,7 +730,8 @@ void addEvent_Dw ( IRSB* sb, IRAtom* daddr, Int dsize, Int type )
     evt = &events[events_used];
     evt->ekind = Event_Dw;
     evt->size  = dsize;
-    evt->addr  = daddr;
+    evt->addr  = dataa;
+    evt->iaddr = insta;
     evt->type  = type;
     events_used++;
 }
@@ -722,6 +756,9 @@ static void mv_malloc ( ThreadId tid, void* p, SizeT szB )
 {
     if (!p)
         return;
+    VG_(printf)("[MALLOC]: %p %d\n", p, szB);
+    Int ncallers = VG_(clo_backtrace_size);
+    VG_(get_and_pp_StackTrace) ( tid, ncallers );
 
     HP_Chunk        *hc = VG_(HT_lookup)(malloc_list, (UWord)p);
 
@@ -735,7 +772,6 @@ static void mv_malloc ( ThreadId tid, void* p, SizeT szB )
         VG_(HT_add_node)(malloc_list, hc);
 
         put_wdata((Addr)p, MV_ShiftedAlloc, szB);
-	VG_(printf)("[MALLOC]: %p %d\n", p, szB);
     }
 }
 
@@ -747,6 +783,8 @@ static void mv_free ( ThreadId tid __attribute__((unused)), void* p )
     {
         put_wdata((Addr)p, MV_ShiftedFree, hc->size);
 	VG_(printf)("[FREE]: %p %d\n", p, hc->size);
+	Int ncallers = VG_(clo_backtrace_size);
+    VG_(get_and_pp_StackTrace) ( tid, ncallers );
         VG_(free)(hc);
     }
 }
@@ -769,11 +807,15 @@ static void mv_realloc ( ThreadId tid, void* p_new, void* p_old, SizeT new_szB )
             put_wdata((Addr)p_new + hc->size,
                     MV_ShiftedAlloc, new_szB - hc->size);
 	    VG_(printf)("[MALLOC]: %p %d\n", p_new + hc->size, new_szB - hc->size);
+	    Int ncallers = VG_(clo_backtrace_size);
+    VG_(get_and_pp_StackTrace) ( tid, ncallers );
 	}
         else if (new_szB < hc->size) {
             put_wdata((Addr)p_new + new_szB,
                     MV_ShiftedFree, hc->size - new_szB);
 		VG_(printf)("[FREE]: %p %d\n", p_new + new_szB, hc->size - new_szB);
+		Int ncallers = VG_(clo_backtrace_size);
+    VG_(get_and_pp_StackTrace) ( tid, ncallers );
 	}
 
         hc->size = new_szB;
@@ -843,6 +885,8 @@ IRTypeToMVType(IRType type)
     return MV_DataInt32;
 }
 
+
+// TODO addresses must be constructed
 /* This is copied mostly verbatim from lackey */
 static IRSB*
 mv_instrument ( VgCallbackClosure* closure,
@@ -855,6 +899,7 @@ mv_instrument ( VgCallbackClosure* closure,
     Int        i;
     IRSB*      sbOut;
     IRTypeEnv* tyenv = sbIn->tyenv;
+    Addr64 last_addr;
 
     if (gWordTy != hWordTy) {
         /* We don't currently support this case. */
@@ -890,12 +935,14 @@ mv_instrument ( VgCallbackClosure* closure,
 
             case Ist_IMark:
                 canCreateModify = False;
-                if (clo_trace_instrs)
-                {
+               // if (clo_trace_instrs)
+               // {
+			last_addr = st->Ist.IMark.addr;
+		//	VG_(printf)("[LAST_ADDR]: %p\n", last_addr);
                     addEvent_Ir( sbOut,
                             mkIRExpr_HWord( (HWord)st->Ist.IMark.addr ),
                             st->Ist.IMark.len );
-                }
+               // }
                 addStmtToIRSB( sbOut, st );
                 break;
 
@@ -903,7 +950,7 @@ mv_instrument ( VgCallbackClosure* closure,
                 {
                     IRExpr* data = st->Ist.WrTmp.data;
                     if (data->tag == Iex_Load) {
-                        addEvent_Dr( sbOut, data->Iex.Load.addr,
+                        addEvent_Dr( sbOut, last_addr, data->Iex.Load.addr,
                                 sizeofIRType(data->Iex.Load.ty),
                                IRTypeToMVType(data->Iex.Load.ty) );
                     }
@@ -914,8 +961,8 @@ mv_instrument ( VgCallbackClosure* closure,
             case Ist_Store:
                 {
                     IRExpr* data  = st->Ist.Store.data;
-                    addEvent_Dw( sbOut, st->Ist.Store.addr,
-                            sizeofIRType(typeOfIRExpr(tyenv, data)),
+                    addEvent_Dw( sbOut, last_addr, st->Ist.Store.addr,
+				    sizeofIRType(typeOfIRExpr(tyenv, data)),
                            IRTypeToMVType(typeOfIRExpr(tyenv, data)) );
                 }
                 addStmtToIRSB( sbOut, st );
@@ -925,7 +972,7 @@ mv_instrument ( VgCallbackClosure* closure,
                 {
                     IRStoreG* sg = st->Ist.StoreG.details;
                     IRExpr* data  = sg->data;
-                    addEvent_Dw( sbOut, sg->addr,
+                    addEvent_Dw( sbOut, last_addr, sg->addr,
                             sizeofIRType(typeOfIRExpr(tyenv, data)),
                            IRTypeToMVType(typeOfIRExpr(tyenv, data)) );
                 }
@@ -938,7 +985,7 @@ mv_instrument ( VgCallbackClosure* closure,
                     IRType type = Ity_INVALID;
                     IRType typeWide = Ity_INVALID;
                     typeOfIRLoadGOp(lg->cvt, &typeWide, &type);
-                    addEvent_Dw( sbOut, lg->addr,
+                    addEvent_Dw( sbOut, last_addr, lg->addr,
                             sizeofIRType(type),
                            IRTypeToMVType(type) );
                 }
@@ -955,9 +1002,9 @@ mv_instrument ( VgCallbackClosure* closure,
                         tl_assert(d->mSize != 0);
                         dsize = d->mSize;
                         if (d->mFx == Ifx_Read || d->mFx == Ifx_Modify)
-                            addEvent_Dr( sbOut, d->mAddr, dsize, MV_DataInt32 );
+                            addEvent_Dr( sbOut, last_addr, d->mAddr, dsize, MV_DataInt32 );
                         if (d->mFx == Ifx_Write || d->mFx == Ifx_Modify)
-                            addEvent_Dw( sbOut, d->mAddr, dsize, MV_DataInt32 );
+                            addEvent_Dw( sbOut, last_addr, d->mAddr, dsize, MV_DataInt32 );
                     } else {
                         tl_assert(d->mAddr == NULL);
                         tl_assert(d->mSize == 0);
@@ -982,9 +1029,9 @@ mv_instrument ( VgCallbackClosure* closure,
                     dataSize = sizeofIRType(dataTy);
                     if (cas->dataHi != NULL)
                         dataSize *= 2; /* since it's a doubleword-CAS */
-                    addEvent_Dr( sbOut, cas->addr, dataSize,
+                    addEvent_Dr( sbOut, last_addr, cas->addr, dataSize,
                             IRTypeToMVType(dataTy) );
-                    addEvent_Dw( sbOut, cas->addr, dataSize,
+                    addEvent_Dw( sbOut, last_addr, cas->addr, dataSize,
                             IRTypeToMVType(dataTy) );
                     addStmtToIRSB( sbOut, st );
                     break;
@@ -996,13 +1043,13 @@ mv_instrument ( VgCallbackClosure* closure,
                     if (st->Ist.LLSC.storedata == NULL) {
                         /* LL */
                         dataTy = typeOfIRTemp(tyenv, st->Ist.LLSC.result);
-                        addEvent_Dr( sbOut, st->Ist.LLSC.addr,
+                        addEvent_Dr( sbOut, last_addr, st->Ist.LLSC.addr,
                                 sizeofIRType(dataTy),
                                IRTypeToMVType(dataTy) );
                     } else {
                         /* SC */
                         dataTy = typeOfIRExpr(tyenv, st->Ist.LLSC.storedata);
-                        addEvent_Dw( sbOut, st->Ist.LLSC.addr,
+                        addEvent_Dw( sbOut, last_addr, st->Ist.LLSC.addr,
                                 sizeofIRType(dataTy),
                                 IRTypeToMVType(dataTy) );
                     }
@@ -1030,8 +1077,14 @@ mv_instrument ( VgCallbackClosure* closure,
 static void mv_fini(Int exitcode)
 {
     flush_data();
+    DebugInfo *di = NULL;
+    while((di = VG_(next_DebugInfo)(di)) != NULL)
+    {
+	VG_(printf)("[LIB]: %s %p-%p\n", VG_(DebugInfo_get_filename)(di), VG_(DebugInfo_get_text_avma)(di), VG_(DebugInfo_get_text_avma)(di) + VG_(DebugInfo_get_text_size)(di));
+    }
 
-    VG_(printf)("Total events: %llu\n", theTotalEvents);
+
+//    VG_(printf)("Total events: %llu\n", theTotalEvents);
 }
 
 static void mv_atfork_child(ThreadId tid)
@@ -1047,6 +1100,9 @@ static void mv_atfork_child(ThreadId tid)
 static void
 mv_mmap_info(Addr a, SizeT len, MV_MMapType type, int thread, const HChar *filename)
 {
+   // VG_(printf)("[MMAP]: %p %d\n", a, len);
+   // Int ncallers = VG_(clo_backtrace_size);
+   // VG_(get_and_pp_StackTrace) ( thread, ncallers );
     if (!clo_pipe)
         return;
 
@@ -1054,6 +1110,7 @@ mv_mmap_info(Addr a, SizeT len, MV_MMapType type, int thread, const HChar *filen
     // calling this with 0 entries.
     if (theEntries)
         flush_data();
+
 
     MV_Header        header;
 
