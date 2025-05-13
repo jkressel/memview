@@ -49,6 +49,8 @@
 #include "pub_tool_aspacehl.h"
 #include "pub_tool_aspacemgr.h"
 #include "coregrind/pub_core_aspacemgr.h"
+#include <stdio.h>
+#include <string.h>
 /* This define enables the malloc() wrapping callbacks in the tool runtime.
    To disable wrapping entirely you also need to remove the
    vgpreload_memview-*.so file. */
@@ -62,6 +64,11 @@ static int         clo_pipe = 0;
 static int         clo_inpipe = 0;
 static Bool        clo_trace_instrs = False;
 static const char *clo_shared_mem = 0;
+static int found_libc = 0;
+Addr libc_start = 0;
+Addr libc_end = 0;
+Addr m_min = 0;
+Addr m_max = 0;
 
 static Bool mv_process_cmd_line_option(const HChar* arg)
 {
@@ -300,6 +307,39 @@ typedef
    instrumentation IR for each event, in the order in which they
    appear. */
 
+static void check_for_libc(Addr ptr) {
+	if (ptr >= libc_start && ptr < libc_end){
+		Addr ips[VG_(clo_backtrace_size)];
+   		UInt n_ips;
+		n_ips = VG_(get_StackTrace) ( VG_(get_running_tid)(), ips, VG_(clo_backtrace_size),
+                                   NULL/*array to dump SP values in*/,
+                                   NULL/*array to dump FP values in*/,
+                                   0 );
+	//	VG_(printf)("libctest start %p end  %p ptr %p\n", libc_start, libc_end, ptr);
+		VG_(get_and_pp_StackTrace) ( VG_(get_running_tid)(), n_ips );
+	//	for (int i = 1; i < n_ips; i++) {
+	//		if (ips[i] > libc_end || ips[i] < libc_start)
+	//			 VG_(printf)(" %p -> %p\n", ptr, ips[i]);
+	//			return ips[i];
+		}
+//	return ptr;
+}
+
+static int find_libc() {
+	DebugInfo *di = NULL;
+    while((di = VG_(next_DebugInfo)(di)) != NULL)
+    {
+     //   VG_(printf)("[LIB]: %s %p-%p\n", VG_(DebugInfo_get_filename)(di), VG_(DebugInfo_get_text_avma)(di), VG_(DebugInfo_get_text_avma)(di) + VG_(DebugInfo_get_text_size)(di));
+     	if (VG_(strstr)(VG_(DebugInfo_get_filename)(di), "libc.so")) {
+		 VG_(printf)("found libc\n");
+		libc_start = VG_(DebugInfo_get_text_avma)(di);
+		libc_end = VG_(DebugInfo_get_text_avma)(di) + VG_(DebugInfo_get_text_size)(di);
+		if (libc_start && libc_end)
+			found_libc = 1;
+	}
+    }
+}
+
 static Event events[N_EVENTS];
 static Int   events_used = 0;
 static Int   canCreateModify = 0;
@@ -317,60 +357,141 @@ static VG_REGPARM(3) void trace_2instr(Addr addr, Addr addr2, SizeT size)
 
 static VG_REGPARM(2) void trace_load(Addr addri, Addr addrd, SizeT size)
 {
+	if (!found_libc)
+            find_libc();
     put_data(addrd, MV_ShiftedRead, (uint32)size);
-    VG_(printf)("[L]: %p %p %d\n", addri, addrd, size);
+    	if (addrd >= m_min && addrd < m_max) {
+    		VG_(printf)("[L]: %p %p %d\n", addri, addrd, size);
+    		if (found_libc)
+            		check_for_libc(addri);
+    }
 }
 
 static VG_REGPARM(3) void trace_2load(Addr addri, Addr addrd, Addr addri2, Addr addrd2, SizeT size)
 {
+	if (!found_libc)
+            find_libc();
     put_data(addrd, MV_ShiftedRead, (uint32)size);
     put_data(addrd2, MV_ShiftedRead, (uint32)size);
+    if (addrd >= m_min && addrd < m_max) {
     VG_(printf)("[L]: %p %p %d\n", addri, addrd, size);
+    if (found_libc) {
+            check_for_libc(addri);
+    }
+    }
+    if (addrd2 >= m_min && addrd2 < m_max) {
     VG_(printf)("[L]: %p %p %d\n", addri2, addrd2, size);
+    if (found_libc) {
+            check_for_libc(addri2);
+    }
+    }
 }
 
 static VG_REGPARM(2) void trace_store(Addr addri, Addr addrd, SizeT size)
 {
+	if (!found_libc)
+            find_libc();
     put_data(addrd, MV_ShiftedWrite, (uint32)size);
+    if (addrd >= m_min && addrd < m_max) {
     VG_(printf)("[S]: %p %p %d\n", addri, addrd, size);
+    if (found_libc) {
+            check_for_libc(addri);
+    }
+    }
 }
 
 static VG_REGPARM(3) void trace_2store(Addr addri, Addr addrd, Addr addri2, Addr addrd2, SizeT size)
 {
+	if (!found_libc)
+            find_libc();
     put_data(addrd, MV_ShiftedWrite, (uint32)size);
     put_data(addrd2, MV_ShiftedWrite, (uint32)size);
+    if (addrd >= m_min && addrd < m_max) {
     VG_(printf)("[S]: %p %p %d\n", addri, addrd, size);
+    if (found_libc) {
+            check_for_libc(addri);
+    }
+    }
+    if (addrd2 >= m_min && addrd2 < m_max) {
     VG_(printf)("[S]: %p %p %d\n", addri2, addrd2, size);
+    if (found_libc) {
+            check_for_libc(addri2);
+    }
+    }
+
 }
 
 static VG_REGPARM(2) void trace_modify(Addr addri, Addr addrd, SizeT size)
 {
+	if (!found_libc)
+            find_libc();
     put_data(addrd, MV_ShiftedWrite, (uint32)size);
+    if (addrd >= m_min && addrd < m_max) {
     VG_(printf)("[S]: %p %p %d\n", addri, addrd, size);
+    if (found_libc) {
+            check_for_libc(addri);
+    }
+    }
 }
 
 static VG_REGPARM(3) void trace_2modify(Addr addri, Addr addrd, Addr addri2, Addr addrd2, SizeT size)
 {
+	if (!found_libc)
+            find_libc();
     put_data(addrd, MV_ShiftedWrite, (uint32)size);
     put_data(addrd2, MV_ShiftedWrite, (uint32)size);
+    if (addrd >= m_min && addrd < m_max) {
     VG_(printf)("[S]: %p %p %d\n", addri, addrd, size);
+    if (found_libc) {
+            check_for_libc(addri);
+    }
+    }
+    if (addrd2 >= m_min && addrd2 < m_max) {
     VG_(printf)("[S]: %p %p %d\n", addri2, addrd2, size);
+    if (found_libc) {
+            check_for_libc(addri2);
+    }
+    }
 }
 
 static VG_REGPARM(3) void trace_loadstore(Addr addri, Addr addrd, Addr addri2, Addr addrd2, SizeT size)
 {
+	if (!found_libc)
+            find_libc();
     put_data(addrd, MV_ShiftedRead, (uint32)size);
     put_data(addrd2, MV_ShiftedWrite, (uint32)size);
+    if (addrd >= m_min && addrd < m_max) {
     VG_(printf)("[L]: %p %p %d\n", addri, addrd, size);
+    if (found_libc) {
+            check_for_libc(addri);
+    }
+    }
+    if (addrd2 >= m_min && addrd2 < m_max) {
     VG_(printf)("[S]: %p %p %d\n", addri2, addrd2, size);
+    if (found_libc) {
+            check_for_libc(addri2);
+    }
+    }
 }
 
 static VG_REGPARM(3) void trace_storeload(Addr addri, Addr addrd, Addr addri2, Addr addrd2, SizeT size)
 {
+if (!found_libc)
+            find_libc();
     put_data(addrd, MV_ShiftedWrite, (uint32)size);
     put_data(addrd2, MV_ShiftedRead, (uint32)size);
+    if (addrd >= m_min && addrd < m_max) {
     VG_(printf)("[S]: %p %p %d\n", addri, addrd, size);
+    if (found_libc) {
+            check_for_libc(addri);
+    }
+    }
+    if (addrd2 >= m_min && addrd2 < m_max) {
     VG_(printf)("[L]: %p %p %d\n", addri2, addrd2, size);
+    if (found_libc) {
+            check_for_libc(addri2);
+    }
+    }
 }
 
 /* This version of flushEvents (currently unused) is similar to the one in
@@ -758,7 +879,11 @@ static void mv_malloc ( ThreadId tid, void* p, SizeT szB )
         return;
     VG_(printf)("[MALLOC]: %p %d\n", p, szB);
     Int ncallers = VG_(clo_backtrace_size);
-    VG_(get_and_pp_StackTrace) ( tid, ncallers );
+    VG_(get_and_pp_StackTrace) ( tid, 10 );
+    if (!m_min || m_min > p)
+	    m_min = p;
+    if (!m_max || m_max < p + szB)
+	    m_max = p + szB;
 
     HP_Chunk        *hc = VG_(HT_lookup)(malloc_list, (UWord)p);
 
@@ -784,7 +909,7 @@ static void mv_free ( ThreadId tid __attribute__((unused)), void* p )
         put_wdata((Addr)p, MV_ShiftedFree, hc->size);
 	VG_(printf)("[FREE]: %p %d\n", p, hc->size);
 	Int ncallers = VG_(clo_backtrace_size);
-    VG_(get_and_pp_StackTrace) ( tid, ncallers );
+    VG_(get_and_pp_StackTrace) ( tid, 10 );
         VG_(free)(hc);
     }
 }
@@ -807,8 +932,8 @@ static void mv_realloc ( ThreadId tid, void* p_new, void* p_old, SizeT new_szB )
             put_wdata((Addr)p_new + hc->size,
                     MV_ShiftedAlloc, new_szB - hc->size);
 	    VG_(printf)("[MALLOC]: %p %d\n", p_new + hc->size, new_szB - hc->size);
-	    Int ncallers = VG_(clo_backtrace_size);
-    VG_(get_and_pp_StackTrace) ( tid, ncallers );
+//	    Int ncallers = VG_(clo_backtrace_size);
+    VG_(get_and_pp_StackTrace) ( tid, 10 );
 	}
         else if (new_szB < hc->size) {
             put_wdata((Addr)p_new + new_szB,
