@@ -7,6 +7,7 @@ import sys
 from adjustText import adjust_text
 
 mappings = 0
+output = []
 
 trace = open(sys.argv[1], 'r')
 trace1 = open(sys.argv[1], 'r').read()
@@ -28,6 +29,12 @@ total_frees = 0
 total_accesses = []
 proportion_accesses = []
 
+#single shared heap
+single_shared_heap = 0
+
+#shared heap per pair of compartments
+
+
 
 allocations = {}
 allocations_by_comp = {}
@@ -44,15 +51,15 @@ def find_allocator(malloc):
 def find_usage(ptr, accessed_by_comp):
     if ptr in allocations:
         allocations[ptr][2][accessed_by_comp] += 1
-        return [allocations[ptr][0], ptr]
+        return [allocations[ptr][0], ptr, allocations[ptr][3]]
     for i in range(1, 1024):
         if ptr - i in allocations:
             allocations[ptr-i][2][accessed_by_comp] += 1
-            return [allocations[ptr-i][0], ptr-i]
+            return [allocations[ptr-i][0], ptr-i, allocations[ptr-i][3]]
     for alloc in allocations:
         if (ptr >= alloc and ptr < alloc + allocations[alloc][1]):
             allocations[alloc][2][accessed_by_comp] += 1
-            return [allocations[alloc][0], alloc]
+            return [allocations[alloc][0], alloc, allocations[alloc][3]]
     return -1
 
 def where_dis(ptr):
@@ -110,6 +117,7 @@ for ln in range(len(lines)):
             comp = find_usage(int(split_ln[2].strip(), base=16), dis)
             if comp != -1 and dis != -1:
                 #print("comp " + str(comp[0]) + " other comp " + str(allocations[comp[1]][0]))
+                output.append("[L]: " + str(comp[2]) + " " + str(comp[1] - int(split_ln[2].strip(), base=16)) + " " + split_ln[3].strip())
                 if comp[0] != dis:
                     different_accesses[dis][comp[0]] = different_accesses[dis][comp[0]] + 1
 
@@ -129,6 +137,7 @@ for ln in range(len(lines)):
             total_accesses[dis] = total_accesses[dis] + 1
             comp = find_usage(int(split_ln[2].strip(), base=16), dis)
             if comp != -1 and dis != -1:
+                output.append("[S]: " + str(comp[2]) + " " + str(comp[1] - int(split_ln[2].strip(), base=16)) + " " + split_ln[3].strip())
             #print("comp " + str(comp[0]) + " other comp " + str(allocations[comp[1]][0]))
                 if comp[0] != dis:
                     different_accesses[dis][comp[0]] = different_accesses[dis][comp[0]] + 1
@@ -146,6 +155,8 @@ for ln in range(len(lines)):
             a_list.append([])
             for libs in range(len(lib_names)):
                 a_list[2].append(0)
+            a_list.append(total_allocations)
+            output.append("[MALLOC]: " + str(total_allocations) + " " + str(lines[ln].split()[2].strip()))
           #  print("alloctor is " + lib_names[allocator] + "\n")
             allocations[int(lines[ln].split()[1].strip(), base=16)] = a_list
             total_allocations = total_allocations + 1
@@ -163,6 +174,7 @@ for ln in range(len(lines)):
             current = current+1
         allocator = find_allocator(alloc)
         if allocator >= 0 and int(lines[ln].split()[1].strip(), base=16) in allocations:
+            output.append("[FREE]: " + str(allocations[int(lines[ln].split()[1].strip(), base=16)][3]))
             comp_allocated_in = allocations[int(lines[ln].split()[1].strip(), base=16)][0]
             if allocator != comp_allocated_in:
                 different_frees[allocator][comp_allocated_in] = different_frees[allocator][comp_allocated_in] + 1
@@ -188,33 +200,33 @@ for ln in range(len(lines)):
 
             del allocations[int(lines[ln].split()[1].strip(), base=16)]
 
-    progress = round((ln / len(lines))*100, 2)
+#    progress = round((ln / len(lines))*100, 2)
     #if progress % 1 == 0:
     #    for i in range(len(different_frees)):
     #        print(lib_names[i] + " freed memory it did not allocate: " + str(different_frees[i]) + " and accessed memory it did not allocate: " + str(different_accesses[i]) + "\n")
-    print(str(progress) + "%", end='\r')
+#    print(str(progress) + "%", end='\r')
 
 
-#for ptr in allocations:
-#    comp_allocated_in = allocations[ptr][0]
-#    used_by_allocator = allocations[ptr][2][comp_allocated_in]
-#    for compartment in range(len(lib_names)):
-#        if compartment == comp_allocated_in:
-#            continue
+for ptr in allocations:
+    comp_allocated_in = allocations[ptr][0]
+    used_by_allocator = allocations[ptr][2][comp_allocated_in]
+    for compartment in range(len(lib_names)):
+        if compartment == comp_allocated_in:
+            continue
 
-#        used_by_other = allocations[ptr][2][compartment]
-#        if used_by_allocator == 0:
-#            proportion_accesses[comp_allocated_in][compartment][11] += 1
-#        elif used_by_other == 0:
-#            proportion_accesses[comp_allocated_in][compartment][0] += 1
-#        else:
-#            proportion = int(round(used_by_other/used_by_allocator,1) *10)
-#            if proportion == 0:
-#                proportion_accesses[comp_allocated_in][compartment][1] += 1
-#            elif proportion > 10:
-#                proportion_accesses[comp_allocated_in][compartment][10] += 1
-#            else:
-#                proportion_accesses[comp_allocated_in][compartment][proportion] += 1
+        used_by_other = allocations[ptr][2][compartment]
+        if used_by_allocator == 0:
+            proportion_accesses[comp_allocated_in][compartment][11] += 1
+        elif used_by_other == 0:
+            proportion_accesses[comp_allocated_in][compartment][0] += 1
+        else:
+            proportion = int(round(used_by_other/used_by_allocator,1) *10)
+            if proportion == 0:
+                proportion_accesses[comp_allocated_in][compartment][1] += 1
+            elif proportion > 10:
+                proportion_accesses[comp_allocated_in][compartment][10] += 1
+            else:
+                proportion_accesses[comp_allocated_in][compartment][proportion] += 1
 
 
 for i in range(len(proportion_accesses)):
@@ -232,4 +244,5 @@ for i in range(len(different_frees)):
     for j in range(len(different_frees)):
         print(str(lib_names[i] +" => "+ lib_names[j]).ljust(130)+ "freed: " + str(different_frees[i][j]) +  "\t\taccessed: " + str(different_accesses[i][j])) 
 
-
+for i in range(len(output)):
+    print(output[i])

@@ -331,7 +331,6 @@ static int find_libc() {
     {
      //   VG_(printf)("[LIB]: %s %p-%p\n", VG_(DebugInfo_get_filename)(di), VG_(DebugInfo_get_text_avma)(di), VG_(DebugInfo_get_text_avma)(di) + VG_(DebugInfo_get_text_size)(di));
      	if (VG_(strstr)(VG_(DebugInfo_get_filename)(di), "libc.so")) {
-		 VG_(printf)("found libc\n");
 		libc_start = VG_(DebugInfo_get_text_avma)(di);
 		libc_end = VG_(DebugInfo_get_text_avma)(di) + VG_(DebugInfo_get_text_size)(di);
 		if (libc_start && libc_end)
