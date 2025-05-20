@@ -1,0 +1,24 @@
+
+// Redefine the namespace, so we can have two versions.
+#define snmalloc snmalloc_d
+
+#include <snmalloc/backend/fixedglobalconfig.h>
+#include <snmalloc/snmalloc_core.h>
+
+// Specify type of allocator
+#define SNMALLOC_PROVIDE_OWN_CONFIG
+
+namespace snmalloc
+{
+  using CustomGlobals = FixedRangeConfig<PALNoAlloc<DefaultPal>>;
+  using Alloc = LocalAllocator<CustomGlobals>;
+}
+
+#define SNMALLOC_NAME_MANGLE(a) d_##a
+#include <snmalloc/override/malloc.cc>
+
+extern "C" void oe_allocator_init4(void* base, void* end)
+{
+  snmalloc::CustomGlobals::init(
+    nullptr, base, address_cast(end) - address_cast(base));
+}
